@@ -1,0 +1,10 @@
+{
+  "httpMethod": "GET",
+  "path": "/items/abc-123-def-456",
+  "pathParameters": {
+    "id": "abc-123-def-456"
+  },
+  "queryStringParameters": null,
+  "headers": {},
+  "body": null
+}

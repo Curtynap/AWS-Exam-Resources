@@ -1,0 +1,10 @@
+{
+  "httpMethod": "POST",
+  "path": "/items",
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"name\": \"AWS Study Guide\", \"price\": 29.99, \"category\": \"books\"}"
+}

@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  DVA-C02 Task 1.2 — Lambda Event Source Mappings
+  Demonstrates push (S3) and poll (DynamoDB Streams, SQS) invocation models.
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 256
+
+Resources:
+
+  # ──────────────────────────────────────────────
+  # S3 Bucket — Push Model (S3 invokes Lambda)
+  # ──────────────────────────────────────────────
+  UploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "dva-study-uploads-${AWS::AccountId}"
+
+  S3ProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: dva-task-1-2-S3ProcessorFunction
+      CodeUri: src/
+      Handler: s3_processor.lambda_handler
+      Description: "Processes S3 object creation events (PUSH model)"
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+      Events:
+        # EXAM TIP: This is a PUSH event — S3 invokes Lambda directly.
+        # S3 sends the event synchronously to Lambda.
+        S3Upload:
+          Type: S3
+          Properties:
+            Bucket: !Ref UploadBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: uploads/
+
+  # ──────────────────────────────────────────────
+  # DynamoDB Stream — Poll Model (Lambda polls the stream)
+  # ──────────────────────────────────────────────
+  # Note: This references the Items table from Task 1.1.
+  # If you haven't deployed Task 1.1, uncomment the table below.
+
+  # ItemsTable:
+  #   Type: AWS::DynamoDB::Table
+  #   Properties:
+  #     TableName: Items
+  #     BillingMode: PAY_PER_REQUEST
+  #     AttributeDefinitions:
+  #       - AttributeName: itemId
+  #         AttributeType: S
+  #     KeySchema:
+  #       - AttributeName: itemId
+  #         KeyType: HASH
+  #     StreamSpecification:
+  #       StreamViewType: NEW_AND_OLD_IMAGES
+
+  # If using the existing Items table from Task 1.1, enable streams on it:
+  # aws dynamodb update-table --table-name Items \
+  #   --stream-specification StreamEnabled=true,StreamViewType=NEW_AND_OLD_IMAGES
+
+  StreamProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: dva-task-1-2-StreamProcessorFunction
+      CodeUri: src/
+      Handler: stream_processor.lambda_handler
+      Description: "Processes DynamoDB Stream events (POLL model)"
+      Policies:
+        - DynamoDBStreamReadPolicy:
+            TableName: Items
+            StreamName: "*"
+      # EXAM TIP: Event source mappings for streams are POLL-based.
+      # Lambda service polls the stream shards for new records.
+      # You configure this OUTSIDE the Events block for existing tables.
+      # If the Items table stream ARN is known, uncomment below:
+      # Events:
+      #   Stream:
+      #     Type: DynamoDB
+      #     Properties:
+      #       Stream: !GetAtt ItemsTable.StreamArn
+      #       StartingPosition: TRIM_HORIZON  # Process from the oldest record
+      #       BatchSize: 10                    # Max records per invocation
+      #       MaximumBatchingWindowInSeconds: 5 # Wait up to 5s to fill the batch
+      #       BisectBatchOnFunctionError: true  # Split failed batches in half for retry
+      #       MaximumRetryAttempts: 3
+      #       DestinationConfig:
+      #         OnFailure:
+      #           Destination: !GetAtt StreamDLQ.Arn
+
+  StreamDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dva-stream-dlq
+      MessageRetentionPeriod: 1209600  # 14 days
+
+  # ──────────────────────────────────────────────
+  # SQS Queue — Poll Model (Lambda polls the queue)
+  # ──────────────────────────────────────────────
+  ProcessingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dva-processing-queue
+      # EXAM TIP: VisibilityTimeout MUST be >= 6x Lambda timeout.
+      # Lambda timeout = 30s, so VisibilityTimeout >= 180s.
+      VisibilityTimeout: 180
+      MessageRetentionPeriod: 345600   # 4 days
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ProcessingDLQ.Arn
+        maxReceiveCount: 3             # After 3 failed attempts, send to DLQ
+
+  ProcessingDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dva-processing-dlq
+      MessageRetentionPeriod: 1209600  # 14 days
+
+  SQSProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: dva-task-1-2-SQSProcessorFunction
+      CodeUri: src/
+      Handler: sqs_processor.lambda_handler
+      Description: "Processes SQS messages (POLL model)"
+      Policies:
+        - SQSPollerPolicy:
+            QueueName: !GetAtt ProcessingQueue.QueueName
+      Events:
+        # EXAM TIP: This creates an Event Source Mapping (poll-based).
+        # Lambda service long-polls the SQS queue.
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ProcessingQueue.Arn
+            BatchSize: 5                          # Process up to 5 messages per invocation
+            MaximumBatchingWindowInSeconds: 10     # Wait up to 10s to fill the batch
+            FunctionResponseTypes:
+              - ReportBatchItemFailures           # EXAM TIP: Enables partial batch failure reporting
+
+Outputs:
+  UploadBucketName:
+    Description: "S3 bucket for upload testing"
+    Value: !Ref UploadBucket
+  ProcessingQueueUrl:
+    Description: "SQS Queue URL for message testing"
+    Value: !Ref ProcessingQueue
+  ProcessingDLQUrl:
+    Description: "Dead Letter Queue URL"
+    Value: !Ref ProcessingDLQ

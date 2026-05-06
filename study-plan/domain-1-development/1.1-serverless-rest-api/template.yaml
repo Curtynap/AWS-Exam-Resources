@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  DVA-C02 Task 1.1 — Serverless REST API
+  A CRUD API backed by Lambda and DynamoDB using Lambda proxy integration.
+
+# ──────────────────────────────────────────────
+# Globals — shared config applied to all functions
+# ──────────────────────────────────────────────
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 15
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref ItemsTable
+        AWS_REGION_NAME: !Ref AWS::Region
+
+# ──────────────────────────────────────────────
+# Resources
+# ──────────────────────────────────────────────
+Resources:
+
+  # --- DynamoDB Table ---
+  ItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Items
+      BillingMode: PAY_PER_REQUEST          # On-Demand capacity (exam: ideal for unpredictable traffic)
+      AttributeDefinitions:
+        - AttributeName: itemId
+          AttributeType: S                   # String partition key
+      KeySchema:
+        - AttributeName: itemId
+          KeyType: HASH                      # Partition key
+      # Exam note: DeletionPolicy defaults to Delete in SAM.
+      # In production, you'd add DeletionPolicy: Retain for stateful resources.
+
+  # --- Lambda Function ---
+  ItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handler.lambda_handler
+      Description: CRUD handler for Items API
+      # Exam note: SAM auto-creates an execution role with basic Lambda permissions.
+      # The Policies section adds DynamoDB access on top of that.
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemsTable       # SAM policy template — least privilege for CRUD
+      Events:
+        # Each event creates an API Gateway route with Lambda proxy integration
+        GetAllItems:
+          Type: Api
+          Properties:
+            Path: /items
+            Method: GET
+        CreateItem:
+          Type: Api
+          Properties:
+            Path: /items
+            Method: POST
+        GetItem:
+          Type: Api
+          Properties:
+            Path: /items/{id}
+            Method: GET
+        UpdateItem:
+          Type: Api
+          Properties:
+            Path: /items/{id}
+            Method: PUT
+        DeleteItem:
+          Type: Api
+          Properties:
+            Path: /items/{id}
+            Method: DELETE
+
+# ──────────────────────────────────────────────
+# Outputs — printed after deployment
+# ──────────────────────────────────────────────
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL (dev stage)"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  ItemsFunctionArn:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt ItemsFunction.Arn
+  ItemsTableName:
+    Description: "DynamoDB Table Name"
+    Value: !Ref ItemsTable

@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "DVA-C02 Task 1.1 \u2014 Serverless REST API A CRUD API backed by Lambda\
+  \ and DynamoDB using Lambda proxy integration.\n"
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 15
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME:
+          Ref: ItemsTable
+        AWS_REGION_NAME:
+          Ref: AWS::Region
+Resources:
+  ItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Items
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: itemId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: itemId
+        KeyType: HASH
+  ItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ItemsFunction
+      Handler: handler.lambda_handler
+      Description: CRUD handler for Items API
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: ItemsTable
+      Events:
+        GetAllItems:
+          Type: Api
+          Properties:
+            Path: /items
+            Method: GET
+        CreateItem:
+          Type: Api
+          Properties:
+            Path: /items
+            Method: POST
+        GetItem:
+          Type: Api
+          Properties:
+            Path: /items/{id}
+            Method: GET
+        UpdateItem:
+          Type: Api
+          Properties:
+            Path: /items/{id}
+            Method: PUT
+        DeleteItem:
+          Type: Api
+          Properties:
+            Path: /items/{id}
+            Method: DELETE
+    Metadata:
+      SamResourceId: ItemsFunction
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL (dev stage)
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod
+  ItemsFunctionArn:
+    Description: Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - ItemsFunction
+      - Arn
+  ItemsTableName:
+    Description: DynamoDB Table Name
+    Value:
+      Ref: ItemsTable

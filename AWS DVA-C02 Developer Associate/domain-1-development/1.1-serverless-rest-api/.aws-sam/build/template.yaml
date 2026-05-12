@@ -17,7 +17,6 @@ Resources:
   ItemsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: Items
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
       - AttributeName: itemId

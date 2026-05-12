@@ -29,7 +29,7 @@ Resources:
       Description: "Processes S3 object creation events (PUSH model)"
       Policies:
         - S3ReadPolicy:
-            BucketName: !Ref UploadBucket
+            BucketName: !Sub "dva-study-uploads-${AWS::AccountId}"
       Events:
         # EXAM TIP: This is a PUSH event — S3 invokes Lambda directly.
         # S3 sends the event synchronously to Lambda.
@@ -50,19 +50,19 @@ Resources:
   # Note: This references the Items table from Task 1.1.
   # If you haven't deployed Task 1.1, uncomment the table below.
 
-  # ItemsTable:
-  #   Type: AWS::DynamoDB::Table
-  #   Properties:
-  #     TableName: Items
-  #     BillingMode: PAY_PER_REQUEST
-  #     AttributeDefinitions:
-  #       - AttributeName: itemId
-  #         AttributeType: S
-  #     KeySchema:
-  #       - AttributeName: itemId
-  #         KeyType: HASH
-  #     StreamSpecification:
-  #       StreamViewType: NEW_AND_OLD_IMAGES
+  ItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Items
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: itemId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: itemId
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
 
   # If using the existing Items table from Task 1.1, enable streams on it:
   # aws dynamodb update-table --table-name Items \
@@ -79,23 +79,25 @@ Resources:
         - DynamoDBStreamReadPolicy:
             TableName: Items
             StreamName: "*"
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt StreamDLQ.QueueName
       # EXAM TIP: Event source mappings for streams are POLL-based.
       # Lambda service polls the stream shards for new records.
       # You configure this OUTSIDE the Events block for existing tables.
       # If the Items table stream ARN is known, uncomment below:
-      # Events:
-      #   Stream:
-      #     Type: DynamoDB
-      #     Properties:
-      #       Stream: !GetAtt ItemsTable.StreamArn
-      #       StartingPosition: TRIM_HORIZON  # Process from the oldest record
-      #       BatchSize: 10                    # Max records per invocation
-      #       MaximumBatchingWindowInSeconds: 5 # Wait up to 5s to fill the batch
-      #       BisectBatchOnFunctionError: true  # Split failed batches in half for retry
-      #       MaximumRetryAttempts: 3
-      #       DestinationConfig:
-      #         OnFailure:
-      #           Destination: !GetAtt StreamDLQ.Arn
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt ItemsTable.StreamArn
+            StartingPosition: TRIM_HORIZON  # Process from the oldest record
+            BatchSize: 10                    # Max records per invocation
+            MaximumBatchingWindowInSeconds: 5 # Wait up to 5s to fill the batch
+            BisectBatchOnFunctionError: true  # Split failed batches in half for retry
+            MaximumRetryAttempts: 3
+            DestinationConfig:
+              OnFailure:
+                Destination: !GetAtt StreamDLQ.Arn
 
   StreamDLQ:
     Type: AWS::SQS::Queue

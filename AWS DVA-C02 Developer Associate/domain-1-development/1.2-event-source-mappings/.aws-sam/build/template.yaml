@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "DVA-C02 Task 1.2 \u2014 Lambda Event Source Mappings Demonstrates push\
+  \ (S3) and poll (DynamoDB Streams, SQS) invocation models.\n"
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 256
+Resources:
+  UploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub: dva-study-uploads-${AWS::AccountId}
+  S3ProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: dva-task-1-2-S3ProcessorFunction
+      CodeUri: S3ProcessorFunction
+      Handler: s3_processor.lambda_handler
+      Description: Processes S3 object creation events (PUSH model)
+      Policies:
+      - S3ReadPolicy:
+          BucketName:
+            Fn::Sub: dva-study-uploads-${AWS::AccountId}
+      Events:
+        S3Upload:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: UploadBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                - Name: prefix
+                  Value: uploads/
+    Metadata:
+      SamResourceId: S3ProcessorFunction
+  ItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Items
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: itemId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: itemId
+        KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  StreamProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: dva-task-1-2-StreamProcessorFunction
+      CodeUri: StreamProcessorFunction
+      Handler: stream_processor.lambda_handler
+      Description: Processes DynamoDB Stream events (POLL model)
+      Policies:
+      - DynamoDBStreamReadPolicy:
+          TableName: Items
+          StreamName: '*'
+      - SQSSendMessagePolicy:
+          QueueName:
+            Fn::GetAtt:
+            - StreamDLQ
+            - QueueName
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream:
+              Fn::GetAtt:
+              - ItemsTable
+              - StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 5
+            BisectBatchOnFunctionError: true
+            MaximumRetryAttempts: 3
+            DestinationConfig:
+              OnFailure:
+                Destination:
+                  Fn::GetAtt:
+                  - StreamDLQ
+                  - Arn
+    Metadata:
+      SamResourceId: StreamProcessorFunction
+  StreamDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dva-stream-dlq
+      MessageRetentionPeriod: 1209600
+  ProcessingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dva-processing-queue
+      VisibilityTimeout: 180
+      MessageRetentionPeriod: 345600
+      RedrivePolicy:
+        deadLetterTargetArn:
+          Fn::GetAtt:
+          - ProcessingDLQ
+          - Arn
+        maxReceiveCount: 3
+  ProcessingDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dva-processing-dlq
+      MessageRetentionPeriod: 1209600
+  SQSProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: dva-task-1-2-SQSProcessorFunction
+      CodeUri: SQSProcessorFunction
+      Handler: sqs_processor.lambda_handler
+      Description: Processes SQS messages (POLL model)
+      Policies:
+      - SQSPollerPolicy:
+          QueueName:
+            Fn::GetAtt:
+            - ProcessingQueue
+            - QueueName
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue:
+              Fn::GetAtt:
+              - ProcessingQueue
+              - Arn
+            BatchSize: 5
+            MaximumBatchingWindowInSeconds: 10
+            FunctionResponseTypes:
+            - ReportBatchItemFailures
+    Metadata:
+      SamResourceId: SQSProcessorFunction
+Outputs:
+  UploadBucketName:
+    Description: S3 bucket for upload testing
+    Value:
+      Ref: UploadBucket
+  ProcessingQueueUrl:
+    Description: SQS Queue URL for message testing
+    Value:
+      Ref: ProcessingQueue
+  ProcessingDLQUrl:
+    Description: Dead Letter Queue URL
+    Value:
+      Ref: ProcessingDLQ

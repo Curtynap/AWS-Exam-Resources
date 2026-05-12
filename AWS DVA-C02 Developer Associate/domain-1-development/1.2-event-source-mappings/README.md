@@ -197,24 +197,24 @@ sam delete --stack-name dva-task-1-2-event-sources --no-prompts
 
 ## ✅ Completion Checklist
 
-- [ ] S3 upload triggered the S3 Processor Lambda (push model)
-- [ ] DynamoDB insert/update triggered the Stream Processor Lambda (poll model)
-- [ ] SQS messages were batched and processed by the SQS Processor Lambda (poll model)
-- [ ] Compared CloudWatch logs across all three patterns
-- [ ] Understand why VisibilityTimeout must be 6× Lambda timeout
-- [ ] Can explain push vs. poll models in your own words
-- [ ] Resources torn down
+- [X] S3 upload triggered the S3 Processor Lambda (push model)
+- [X] DynamoDB insert/update triggered the Stream Processor Lambda (poll model)
+- [X] SQS messages were batched and processed by the SQS Processor Lambda (poll model)
+- [X] Compared CloudWatch logs across all three patterns
+- [X] Understand why VisibilityTimeout must be 6× Lambda timeout
+- [X] Can explain push vs. poll models in your own words
+- [X] Resources torn down
 
 ---
 
 ## 📝 My Summary (Fill In After Completing)
 
-**Date completed:**
+**Date completed:** 2026-05-11
 **Key takeaway (2 sentences):**
->
+> I deployed and tested Lambda event source mappings using both Push and Poll models. I learned that Push models (like S3) invoke Lambda directly without batching, while Poll models (like DynamoDB Streams and SQS) actively poll for records and process them in batches.
 
 **Tricky thing I learned:**
->
+> Understanding the difference in error handling: SQS (poll) requires enabling partial batch item failures to avoid retrying an entire batch if only one message fails. Also, ensuring the SQS VisibilityTimeout is at least 6x the Lambda timeout is critical.
 
 **Exam-relevant fact I'll remember:**
->
+> Push = "Event Notification" (S3, API Gateway). Poll = "Event Source Mapping" (SQS, DynamoDB Streams). VisibilityTimeout MUST be >= 6x Lambda Timeout!

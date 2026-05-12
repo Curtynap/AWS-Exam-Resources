@@ -26,7 +26,6 @@ Resources:
   ItemsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: Items
       BillingMode: PAY_PER_REQUEST          # On-Demand capacity (exam: ideal for unpredictable traffic)
       AttributeDefinitions:
         - AttributeName: itemId

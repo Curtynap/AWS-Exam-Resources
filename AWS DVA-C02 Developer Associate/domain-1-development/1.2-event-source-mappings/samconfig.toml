@@ -1,9 +1,9 @@
 version = 0.1
 
 [default.deploy.parameters]
-stack_name = "dva-task-1-1-rest-api"
+stack_name = "dva-task-1-2-event-sources"
 resolve_s3 = true
-s3_prefix = "dva-task-1-1-rest-api"
+s3_prefix = "dva-task-1-2-event-sources"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"

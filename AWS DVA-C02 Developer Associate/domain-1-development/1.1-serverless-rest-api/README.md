@@ -176,26 +176,26 @@ aws lambda list-functions --query "Functions[].FunctionName" --output table
 
 ## ✅ Completion Checklist
 
-- [ ] SAM template deployed successfully
-- [ ] POST /items creates a new item in DynamoDB
-- [ ] GET /items/{id} returns the correct item
-- [ ] PUT /items/{id} updates the item
-- [ ] DELETE /items/{id} removes the item
-- [ ] GET /items/{id} returns 404 for a deleted item
-- [ ] Reviewed the Lambda execution role in IAM
-- [ ] Explored CloudWatch Logs for invocation records
-- [ ] Resources torn down after completion
+- [X] SAM template deployed successfully
+- [X] POST /items creates a new item in DynamoDB
+- [X] GET /items/{id} returns the correct item
+- [X] PUT /items/{id} updates the item
+- [X] DELETE /items/{id} removes the item
+- [X] GET /items/{id} returns 404 for a deleted item
+- [X] Reviewed the Lambda execution role in IAM
+- [X] Explored CloudWatch Logs for invocation records
+- [X] Resources torn down after completion
 
 ---
 
 ## 📝 My Summary (Fill In After Completing)
 
-**Date completed:**
+**Date completed:** 2026-05-10
 **Key takeaway (2 sentences):**
->
+> I successfully deployed a Serverless REST API using AWS SAM to manage infrastructure as code. I learned how API Gateway integrates with Lambda via proxy integration and how to execute CRUD operations against a DynamoDB table.
 
 **Tricky thing I learned:**
->
+> Understanding the proxy integration format and ensuring my Lambda function correctly returned the `statusCode`, `body`, and `headers` in the format that API Gateway expects.
 
 **Exam-relevant fact I'll remember:**
->
+> API Gateway has a hard 29-second timeout that cannot be increased, and on-demand DynamoDB tables are best for unpredictable workloads.

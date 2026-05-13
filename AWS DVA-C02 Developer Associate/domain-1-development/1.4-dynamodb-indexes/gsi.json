@@ -1,0 +1,11 @@
+[
+  {
+    "IndexName": "StatusDateIndex",
+    "KeySchema": [
+      {"AttributeName": "status", "KeyType": "HASH"},
+      {"AttributeName": "orderDate", "KeyType": "RANGE"}
+    ],
+    "Projection": {"ProjectionType": "ALL"},
+    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5}
+  }
+]

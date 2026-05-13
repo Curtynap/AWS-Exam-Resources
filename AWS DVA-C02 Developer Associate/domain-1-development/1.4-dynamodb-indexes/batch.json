@@ -1,0 +1,49 @@
+{
+  "Orders": [
+    {
+      "PutRequest": {
+        "Item": {
+          "customerId": {"S": "CUST-001"},
+          "orderDate": {"S": "2026-01-15T10:30:00Z"},
+          "status": {"S": "DELIVERED"},
+          "totalAmount": {"N": "49.99"},
+          "items": {"L": [{"S": "Widget A"}, {"S": "Widget B"}]},
+          "ttl": {"N": "1767225600"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "customerId": {"S": "CUST-001"},
+          "orderDate": {"S": "2026-03-20T14:00:00Z"},
+          "status": {"S": "SHIPPED"},
+          "totalAmount": {"N": "149.99"},
+          "items": {"L": [{"S": "Gadget X"}]}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "customerId": {"S": "CUST-002"},
+          "orderDate": {"S": "2026-02-10T09:00:00Z"},
+          "status": {"S": "DELIVERED"},
+          "totalAmount": {"N": "299.99"},
+          "items": {"L": [{"S": "Premium Widget"}]}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "customerId": {"S": "CUST-001"},
+          "orderDate": {"S": "2026-04-01T16:45:00Z"},
+          "status": {"S": "PENDING"},
+          "totalAmount": {"N": "24.99"},
+          "items": {"L": [{"S": "Mini Widget"}]}
+        }
+      }
+    }
+  ]
+}

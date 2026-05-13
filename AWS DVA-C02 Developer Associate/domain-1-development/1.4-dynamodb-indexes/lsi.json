@@ -1,0 +1,10 @@
+[
+  {
+    "IndexName": "CustomerAmountIndex",
+    "KeySchema": [
+      {"AttributeName": "customerId", "KeyType": "HASH"},
+      {"AttributeName": "totalAmount", "KeyType": "RANGE"}
+    ],
+    "Projection": {"ProjectionType": "ALL"}
+  }
+]

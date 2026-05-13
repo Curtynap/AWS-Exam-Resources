@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Task 1.3 - API Gateway Mapping Templates (VTL)
+Resources:
+  TransformFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: TransformFunction
+      Handler: app.handler
+      Runtime: nodejs20.x
+      Architectures:
+      - x86_64
+      Events:
+        GetTransform:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: VtlApi
+            Path: /transform
+            Method: get
+    Metadata:
+      SamResourceId: TransformFunction
+  VtlApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      DefinitionBody:
+        openapi: 3.0.1
+        info:
+          title: VTL API
+          version: '1.0'
+        paths:
+          /transform:
+            get:
+              x-amazon-apigateway-integration:
+                type: aws
+                httpMethod: POST
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TransformFunction.Arn}/invocations
+                passthroughBehavior: when_no_templates
+                requestTemplates:
+                  application/json: "{\n  \"searchName\": \"$input.params('name')\"\
+                    ,\n  \"searchCategory\": \"$input.params('category')\",\n  \"\
+                    requestId\": \"$context.requestId\"\n}\n"
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseTemplates:
+                      application/json: "{\n  \"statusCode\": 200,\n  \"data\": $input.json('$'),\n\
+                        \  \"requestId\": \"$context.requestId\",\n  \"timestamp\"\
+                        : \"$context.requestTime\"\n}\n"
+              responses:
+                '200':
+                  description: 200 response
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL for Dev stage
+    Value:
+      Fn::Sub: https://${VtlApi}.execute-api.${AWS::Region}.amazonaws.com/dev

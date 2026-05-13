@@ -175,26 +175,26 @@ aws dynamodb delete-table --table-name Orders
 
 ## ✅ Completion Checklist
 
-- [ ] Created table with PK + SK, GSI, and LSI
-- [ ] Loaded sample data
-- [ ] Queried base table with range on sort key
-- [ ] Queried GSI for status-based dashboard
-- [ ] Queried LSI for amount-sorted results
-- [ ] Verified low RCU consumption (no scans)
-- [ ] Enabled TTL
-- [ ] Can explain GSI vs LSI trade-offs
-- [ ] Resources torn down
+- [x] Created table with PK + SK, GSI, and LSI
+- [x] Loaded sample data
+- [x] Queried base table with range on sort key
+- [x] Queried GSI for status-based dashboard
+- [x] Queried LSI for amount-sorted results
+- [x] Verified low RCU consumption (no scans)
+- [x] Enabled TTL
+- [x] Can explain GSI vs LSI trade-offs
+- [x] Resources torn down
 
 ---
 
 ## 📝 My Summary (Fill In After Completing)
 
-**Date completed:**
+**Date completed:** May 12, 2026
 **Key takeaway (2 sentences):**
->
+> DynamoDB is optimized for targeted querying over scanning. By carefully selecting a Partition Key and Sort Key, and setting up secondary indexes, we can pull precisely what we need with low Capacity Unit consumption.
 
 **Tricky thing I learned:**
->
+> Local Secondary Indexes (LSI) can only be created at the exact time you create the base table, and they share the partition size limit with the base table (10GB per partition). Global Secondary Indexes (GSI) can be added or removed anytime and don't have that shared limit.
 
 **Exam-relevant fact I'll remember:**
->
+> Passing JSON via AWS CLI on Windows PowerShell often results in syntax errors because the double quotes get stripped. We can sidestep this by dropping the JSON parameters into `.json` files and passing them via `file://<filename.json>`.

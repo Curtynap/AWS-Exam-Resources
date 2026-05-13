@@ -134,24 +134,24 @@ sam delete --stack-name dva-task-1-3-vtl --no-prompts
 
 ## ✅ Completion Checklist
 
-- [ ] Created a non-proxy Lambda integration
-- [ ] Wrote a request VTL template that transforms query params to JSON body
-- [ ] Wrote a response VTL template that wraps output in an envelope
-- [ ] Tested via the API Gateway Test console
-- [ ] Enabled and reviewed execution logs
-- [ ] Can explain when to use proxy vs. non-proxy integration
-- [ ] Resources torn down
+- [x] Created a non-proxy Lambda integration
+- [x] Wrote a request VTL template that transforms query params to JSON body
+- [x] Wrote a response VTL template that wraps output in an envelope
+- [x] Tested via the API Gateway Test console
+- [x] Enabled and reviewed execution logs
+- [x] Can explain when to use proxy vs. non-proxy integration
+- [x] Resources torn down
 
 ---
 
 ## 📝 My Summary (Fill In After Completing)
 
-**Date completed:**
+**Date completed:** May 12, 2026
 **Key takeaway (2 sentences):**
->
+> VTL mapping templates allow API Gateway to act as a transformation layer between the client and the backend integration. This decoupling means clients can send query strings or XML, and the backend Lambda only ever has to deal with clean JSON.
 
 **Tricky thing I learned:**
->
+> With a non-proxy integration, you are responsible for returning CORS headers via the API Gateway Integration Response mapping template rather than doing it from inside the Lambda function itself.
 
 **Exam-relevant fact I'll remember:**
->
+> API Gateway execution logging requires an IAM Role with `AmazonAPIGatewayPushToCloudWatchLogs` permissions attached to the API Gateway account settings. Proxy integrations give Lambda full control over the HTTP response, while non-proxy integrations require manual mapping of status codes and payloads.
